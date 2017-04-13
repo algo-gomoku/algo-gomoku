@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import sys
+import json
+import random
+
+
+# 读取棋盘信息
+board_context = json.load(open(sys.argv[1]))
+width = board_context['width']      # 棋盘宽度
+height = board_context['height']    # 棋盘高度
+data = board_context['data']        # 棋子数据，19x19
+MY_PIECE_CHAR = board_context['my_piece_char']          # 该玩家棋子字符
+ENEMY_PIECE_CHAR = board_context['enemy_piece_char']    # 敌方棋子字符
+EMPTY_CHAR = board_context['empty_char']                # 空位置字符
+
+# 随机生成下一个子的位置
+while True:
+    x, y = random.randrange(height), random.randrange(width)
+    if data[x][y] == EMPTY_CHAR:
+        print json.dumps({'x': x, 'y': y})
+        sys.exit()
