@@ -158,11 +158,11 @@ class Board(object):
 
     def update_display(self):
         """更新棋盘显示"""
-        print '---' * self.width
         for i in range(self.height):
             for j in range(self.width):
                 print '%s ' % (self.grids[i][j],),
             print
+        print '---' * self.width
 
 
 if __name__ == '__main__':
