@@ -67,7 +67,7 @@ class Player(object):
     def play(self, enemy_piece_char):
         """下子，该接口会调用命令行传输过来的算法文件，并生成下个子的位置"""
         info = {
-            'data': self.board.grids,
+            'data': self.board.data,
             'width': self.board.width,
             'height': self.board.height,
             'my_piece_char': self.piece_char,
@@ -88,34 +88,25 @@ class Player(object):
         """根据游戏规则判断是否赢得胜利"""
         width = self.board.width
         height = self.board.height
-        grids = self.board.grids
 
-        # 检测是否有横向五个相连的棋子
-        for i, j in itertools.product(range(height-4), range(width-4)):
-            if all([grids[ii][jj] == self.piece_char
-                    for ii, jj in [(i, j), (i, j+1), (i, j+2),
-                                   (i, j+3), (i, j+4)]]):
+        for i, j in itertools.product(range(height), range(width)):
+
+            # 检测是否有横向五个相连的棋子
+            if self.board.is_piece(i, range(j, j+5), self.piece_char):
                 return True
 
-        # 检测是否有竖向五个相连的棋子
-        for i, j in itertools.product(range(height-4), range(width-4)):
-            if all([grids[ii][jj] == self.piece_char
-                    for ii, jj in [(i, j), (i+1, j), (i+2, j),
-                                   (i+3, j), (i+4, j)]]):
+            # 检测是否有竖向五个相连的棋子
+            if self.board.is_piece(range(i, i+5), j, self.piece_char):
                 return True
 
-        # 检测是否有左上到右下斜向五个相连的棋子
-        for i, j in itertools.product(range(height-4), range(width-4)):
-            if all([grids[ii][jj] == self.piece_char
-                    for ii, jj in [(i, j), (i+1, j+1), (i+2, j+2),
-                                   (i+3, j+3), (i+4, j+4)]]):
+            # 检测是否有左上到右下斜向五个相连的棋子
+            if self.board.is_piece(range(i, i+5), range(j, j+5),
+                                   self.piece_char):
                 return True
 
-        # 检测是否有左下到右上斜向五个相连的棋子
-        for i, j in itertools.product(range(4, height), range(width-4)):
-            if all([grids[ii][jj] == self.piece_char
-                    for ii, jj in [(i, j), (i-1, j+1), (i-2, j+2),
-                                   (i-3, j+3), (i-4, j+4)]]):
+            # 检测是否有左下到右上斜向五个相连的棋子
+            if self.board.is_piece(range(i, i-5, -1), range(j, j+5),
+                                   self.piece_char):
                 return True
 
         return False
@@ -124,43 +115,80 @@ class Player(object):
 class Board(object):
     """棋盘"""
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, data=None):
         """创建一个棋盘"""
         self.width = width
         self.height = height
 
-        self.grids = []
+        self.data = []
         for i in range(self.height):
             line = []
             for j in range(self.width):
-                line.append(' ')
-            self.grids.append(line)
+                if data is not None and len(data) > i and len(data[i]) > j:
+                    line.append(data[i][j])
+                else:
+                    line.append(' ')
+            self.data.append(line)
 
     def full(self):
         """是否已填充满"""
         for i in range(self.height):
             for j in range(self.width):
-                if self.grids[i][j] == ' ':
+                if self.data[i][j] == ' ':
                     return False
 
         return True
 
+    def get(self, x, y):
+        """获取某个位置的棋子"""
+        if not (0 <= x < self.height and 0 <= y < self.width):
+            return None
+        else:
+            return self.data[x][y]
+
     def set(self, x, y, piece_char):
         """放子"""
-        if self.grids[x][y] != ' ':
-            print >>sys.stderr, '位置(%d, %d)已有子%s，不能放子！' % (
-                x, y, self.grids[x][y])
+        char = self.get(x, y)
+        if char is None:
+            print >>sys.stderr, '位置(%d, %d)超出棋盘！' % (x, y)
             sys.exit(1)
+        elif char != ' ':
+            print >>sys.stderr, '位置(%d, %d)已有子%s，不能放子！' % (x, y, char)
+            sys.exit(2)
         else:
-            self.grids[x][y] = piece_char
+            self.data[x][y] = piece_char
 
         self.update_display()
+
+    def is_piece(self, x, y, piece_char):
+        """判断某个位置或某些位置是否是我们的棋子
+        is_piece([(0, 1), (0, 2), (0, 3), (0, 4)])
+        is_piece(0, 0)
+        is_piece([0, 1, 2], 0)
+        is_piece(0, [0, 1, 2])
+        """
+        if y is None:
+            positions = x
+        else:
+            if isinstance(x, int) and isinstance(y, int):
+                positions = [(x, y)]
+            elif isinstance(x, list) and isinstance(y, int):
+                positions = [(i, y) for i in x]
+            elif isinstance(x, int) and isinstance(y, list):
+                positions = [(x, j) for j in y]
+            elif isinstance(x, list) and isinstance(y, list):
+                positions = zip(x, y)
+            else:
+                raise Exception('is_piece(%r, %r) unimplement!' % (type(x),
+                                                                   type(y)))
+
+        return all([self.get(xx, yy) == piece_char for (xx, yy) in positions])
 
     def update_display(self):
         """更新棋盘显示"""
         for i in range(self.height):
             for j in range(self.width):
-                print '%s ' % (self.grids[i][j],),
+                print '%s ' % (self.data[i][j],),
             print
         print '---' * self.width
 
