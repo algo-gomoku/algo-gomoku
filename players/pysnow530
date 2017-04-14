@@ -1,0 +1,177 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import os
+import sys
+import json
+import random
+import itertools
+import logging
+
+BASEDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASEDIR)
+import gomoku
+
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(message)s',
+                    filename='pysnow530.log',
+                    filemode='a+')
+
+
+# 读取棋盘信息
+board_context = json.loads(sys.argv[1])
+WIDTH = board_context['width']      # 棋盘宽度
+HEIGHT = board_context['height']    # 棋盘高度
+DATA = board_context['data']        # 棋子数据，19x19
+MY_PIECE_CHAR = board_context['my_piece_char']          # 该玩家棋子字符
+ENEMY_PIECE_CHAR = board_context['enemy_piece_char']    # 敌方棋子字符
+EMPTY_CHAR = board_context['empty_char']                # 空位置字符
+
+# 生成棋盘对象
+board = gomoku.Board(WIDTH, HEIGHT, DATA)
+
+
+def play():
+    """算法入口
+    4   ○  ●  ●  ●  ●     ○
+    d4     ●  ●  ●  ●
+    x4     ●  ●  ●
+                    ●
+                    ●
+                    ●
+    """
+    try_5()
+    try_random_pos()
+    try_block_enemy_5()
+    try_d4()
+    try_block_enemy_d4()
+    try_x3()
+    try_block_enemy_x3()
+    try_d3()
+    try_block_enemy_d3()
+    try_alone_2()
+    try_blank_1()
+
+
+def try_this(func):
+    def wrapper():
+        result = func()
+        if result is None:
+            logging.debug('%s failed!' % (func.func_name,))
+        else:
+            x, y = result
+            logging.debug('%s success! (%d, %d)' % (func.func_name, x, y))
+            print json.dumps({'x': x, 'y': y})
+            sys.exit(0)
+
+    return wrapper
+
+
+@try_this
+def try_5(piece_char=MY_PIECE_CHAR):
+    for i, j in itertools.product(range(HEIGHT), range(WIDTH)):
+
+        # 横向
+        if (board.is_piece(i, range(j, j+4), piece_char) and
+                board.is_piece(i, j+4, EMPTY_CHAR)):
+            return i, j+4
+        if (board.is_piece(i, range(j, j+4), piece_char) and
+                board.is_piece(i, j-1, EMPTY_CHAR)):
+            return i, j-1
+
+        # 竖向
+        if (board.is_piece(range(i, i+4), j, piece_char) and
+                board.is_piece(i+4, j, EMPTY_CHAR)):
+            return i+4, j
+        if (board.is_piece(range(i, i+4), j, piece_char) and
+                board.is_piece(i-1, j, EMPTY_CHAR)):
+            return i-1, j
+
+        # 左上到右下
+        if (board.is_piece(range(i, i+4), range(j, j+4), piece_char) and
+                is_piece(i+4, j+4, EMPTY_CHAR)):
+            return i+4, j+4
+        if (board.is_piece(range(i, i+4), range(j, j+4), piece_char) and
+                is_piece(i-1, j-1, EMPTY_CHAR)):
+            return i-1, j-1
+
+        # 左下到右上
+        if (board.is_piece(range(i, i-4, -1), range(j, j+4), piece_char) and
+                board.is_piece(i-4, j+4, EMPTY_CHAR)):
+            return i-4, j+4
+        if (board.is_piece(range(i, i-4, -1), range(j, j+4), piece_char) and
+                board.is_piece(i+1, j-1, EMPTY_CHAR)):
+            return i+1, j-1
+
+
+@try_this
+def try_block_enemy_5():
+    return try_5(ENEMY_PIECE_CHAR)
+
+
+def try_d4():
+    pass
+
+
+def try_block_enemy_d4():
+    pass
+
+
+def try_x3():
+    pass
+
+
+def try_block_enemy_x3():
+    pass
+
+
+def try_d3():
+    pass
+
+
+def try_block_enemy_d3():
+    pass
+
+
+def try_alone_2():
+    pass
+
+
+def try_blank_1():
+    pass
+
+
+def is_piece(x, y=None, piece_char=MY_PIECE_CHAR):
+    """判断某个位置或某些位置是否是我们的棋子
+    is_piece([(0, 1), (0, 2), (0, 3), (0, 4)])
+    is_piece(0, 0)
+    is_piece([0, 1, 2], 0)
+    is_piece(0, [0, 1, 2])
+    """
+    if y is None:
+        positions = x
+    else:
+        if isinstance(x, int) and isinstance(y, int):
+            positions = [(x, y)]
+        elif isinstance(x, list) and isinstance(y, int):
+            positions = [(i, y) for i in x]
+        elif isinstance(x, int) and isinstance(y, list):
+            positions = [(x, j) for j in y]
+        elif isinstance(x, list) and isinstance(y, list):
+            positions = zip(x, y)
+        else:
+            raise Exception('is_piece(%r, %r) unimplement!' % (type(x), type(y)))
+
+    return all([DATA[x][y] == piece_char for (x, y) in positions])
+
+
+@try_this
+def try_random_pos():
+    while True:
+        x, y = random.randrange(HEIGHT), random.randrange(WIDTH)
+        if DATA[x][y] == EMPTY_CHAR:
+            return (x, y)
+
+
+if __name__ == '__main__':
+    play()
