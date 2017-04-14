@@ -75,10 +75,7 @@ class Player(object):
             'empty_char': EMPTY_CHAR,
         }
 
-        board_context_file = tempfile.mktemp()
-        json.dump(info, open(board_context_file, 'w+'))
-
-        next_pos_str = subprocess.check_output([self.name, board_context_file])
+        next_pos_str = subprocess.check_output([self.name, json.dumps(info)])
         next_pos = json.loads(next_pos_str)
         x, y = next_pos['x'], next_pos['y']
         print '%s put (%d, %d) %s!' % (self.name, x, y, self.piece_char)

@@ -6,7 +6,7 @@ import random
 
 
 # 读取棋盘信息
-board_context = json.load(open(sys.argv[1]))
+board_context = json.loads(sys.argv[1])
 width = board_context['width']      # 棋盘宽度
 height = board_context['height']    # 棋盘高度
 data = board_context['data']        # 棋子数据，19x19
