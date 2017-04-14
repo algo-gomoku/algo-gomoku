@@ -89,10 +89,10 @@ def try_5(piece_char=MY_PIECE_CHAR):
 
         # 左上到右下
         if (board.is_piece(range(i, i+4), range(j, j+4), piece_char) and
-                is_piece(i+4, j+4, EMPTY_CHAR)):
+                board.is_piece(i+4, j+4, EMPTY_CHAR)):
             return i+4, j+4
         if (board.is_piece(range(i, i+4), range(j, j+4), piece_char) and
-                is_piece(i-1, j-1, EMPTY_CHAR)):
+                board.is_piece(i-1, j-1, EMPTY_CHAR)):
             return i-1, j-1
 
         # 左下到右上
@@ -139,30 +139,6 @@ def try_alone_2():
 
 def try_blank_1():
     pass
-
-
-def is_piece(x, y=None, piece_char=MY_PIECE_CHAR):
-    """判断某个位置或某些位置是否是我们的棋子
-    is_piece([(0, 1), (0, 2), (0, 3), (0, 4)])
-    is_piece(0, 0)
-    is_piece([0, 1, 2], 0)
-    is_piece(0, [0, 1, 2])
-    """
-    if y is None:
-        positions = x
-    else:
-        if isinstance(x, int) and isinstance(y, int):
-            positions = [(x, y)]
-        elif isinstance(x, list) and isinstance(y, int):
-            positions = [(i, y) for i in x]
-        elif isinstance(x, int) and isinstance(y, list):
-            positions = [(x, j) for j in y]
-        elif isinstance(x, list) and isinstance(y, list):
-            positions = zip(x, y)
-        else:
-            raise Exception('is_piece(%r, %r) unimplement!' % (type(x), type(y)))
-
-    return all([DATA[x][y] == piece_char for (x, y) in positions])
 
 
 @try_this
