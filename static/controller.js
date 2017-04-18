@@ -1,22 +1,66 @@
+// 定义棋盘位置
 board_info = {
     sx: 50,
     sy: 50,
     width: 400,
     height: 400,
 }
+
+
+// 获取代表本局棋的id。如果不存在，随机生成一个id。
+var id = get_or_generate_id();
+
+// 画棋盘
 draw_chessboard(board_info.sx, board_info.sy, board_info.width, board_info.height);
-draw_piece(1, 1, '●');
-update_info('name1', '○', 3.2, 'name2', '●', 4.2);
 
-function get_context() {
-    var game_canvas = document.getElementById('game-canvas');
-    var context = game_canvas.getContext('2d');
+// 获取对战信息
+var info_url = '/chessboards/' + id + '/';
+$.get(info_url).success(function(data) {
 
-    return context;
+    // 画历史棋子
+    var chessboard = data.chessboard;
+    for (var i = 0; i < 19; i++) {
+        for (var j = 0; j < 19; j++) {
+            if (chessboard[i][j] != ' ') {
+                draw_piece(i, j, chessboard[i][j]);
+            }
+        }
+    }
+
+    // 画当前棋子
+    var next = data.next;
+    draw_piece(next.position.i, next.position.j, next.piece_char);
+
+    // 画玩家信息
+    var players = data.players;
+    update_info(
+        players[0].name, players[0].piece_char, players[0].used_time,
+        players[1].name, players[1].piece_char, players[1].used_time
+    );
+});
+
+
+function get_or_generate_id() {
+    if (window.location.search) {
+        var match = window.location.search.match(/\bid=(\d+)/);
+        if (match) {
+            var id = match[1];
+            return id;
+        }
+    }
+
+    var random_id = parseInt(Math.random() * 1000);
+    window.location.search = 'id=' + random_id;
 }
 
-function draw_chessboard(sx, sy, width, height) {
+
+function draw_chessboard() {
     var context = get_context();
+
+    sx = board_info.sx;
+    sy = board_info.sy;
+    width = board_info.width;
+    height = board_info.height;
 
     context.rect(sx, sy, width, height);
 
@@ -33,20 +77,22 @@ function draw_chessboard(sx, sy, width, height) {
     context.stroke();
 }
 
-function draw_piece(x, y, piece_char) {
+
+function draw_piece(i, j, piece_char) {
     var context = get_context();
 
     var unit_width = board_info.width / 19.0;
     var unit_height = board_info.height / 19.0;
 
     context.beginPath();
-    context.arc(board_info.sx + unit_width * (x - 1),
-                board_info.sy + unit_width * (y - 1),
+    context.arc(board_info.sx + unit_width * j,
+                board_info.sy + unit_width * i,
                 unit_width/3.0, 0, Math.PI*2, true);
     context.fillStyle = piece_char === '●' ? "#FFF" : "#000";
     context.fill();
     context.stroke();
 }
+
 
 function update_info(name1, piece_char1, used_time1, name2, piece_char2, used_time2) {
     var context = get_context();
@@ -82,4 +128,12 @@ function update_info(name1, piece_char1, used_time1, name2, piece_char2, used_ti
     context.fillStyle = piece_char2 === '●' ? "#FFF" : "#000";
     context.fill();
     context.stroke();
+}
+
+
+function get_context() {
+    var game_canvas = document.getElementById('game-canvas');
+    var context = game_canvas.getContext('2d');
+
+    return context;
 }
