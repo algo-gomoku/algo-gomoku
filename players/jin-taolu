@@ -1,0 +1,284 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import os
+import sys
+import json
+import random
+import itertools
+import logging
+
+BASEDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASEDIR)
+from core import gomoku
+
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(message)s',
+                    filename='pysnow530.log',
+                    filemode='a+')
+
+
+# 读取棋盘信息
+board_context = json.loads(sys.argv[1])
+WIDTH = board_context['width']      # 棋盘宽度
+HEIGHT = board_context['height']    # 棋盘高度
+DATA = board_context['data']        # 棋子数据，19x19
+MY_PIECE_CHAR = board_context['my_piece_char']          # 该玩家棋子字符
+ENEMY_PIECE_CHAR = board_context['enemy_piece_char']    # 敌方棋子字符
+EMPTY_CHAR = board_context['empty_char']                # 空位置字符
+
+# 生成棋盘对象
+board = gomoku.Board(WIDTH, HEIGHT, DATA)
+
+
+def play():
+    """算法入口
+    4   ○  ●  ●  ●  ●     ○
+    d4     ●  ●  ●  ●
+    x4     ●  ●  ●
+                    ●
+                    ●
+                    ●
+    """
+    try_5()
+    try_block_enemy_5()
+    try_d4()
+    try_block_enemy_d4()
+    try_block_enemy_x3()
+    try_block_enemy_d3()
+    try_blank_1()
+    try_random_pos()
+
+
+def try_this(func):
+    def wrapper():
+        result = func()
+        if result is None:
+            logging.debug('%s failed!' % (func.func_name,))
+        else:
+            x, y = result
+            logging.debug('%s success! (%d, %d)' % (func.func_name, x, y))
+            print json.dumps({'x': x, 'y': y})
+            sys.exit(0)
+
+    return wrapper
+
+
+def __inspect_4_to_5_pos(piece_char):
+    """找到可填出5个pice_char相连的第五个位置"""
+    for i, j in itertools.product(range(HEIGHT), range(WIDTH)):
+
+        # 横向
+        if (board.is_piece(i, range(j, j+4), piece_char) and
+                board.is_piece(i, j+4, EMPTY_CHAR)):
+            return i, j+4
+        if (board.is_piece(i, range(j, j+4), piece_char) and
+                board.is_piece(i, j-1, EMPTY_CHAR)):
+            return i, j-1
+
+        # 竖向
+        if (board.is_piece(range(i, i+4), j, piece_char) and
+                board.is_piece(i+4, j, EMPTY_CHAR)):
+            return i+4, j
+        if (board.is_piece(range(i, i+4), j, piece_char) and
+                board.is_piece(i-1, j, EMPTY_CHAR)):
+            return i-1, j
+
+        # 左上到右下
+        if (board.is_piece(range(i, i+4), range(j, j+4), piece_char) and
+                board.is_piece(i+4, j+4, EMPTY_CHAR)):
+            return i+4, j+4
+        if (board.is_piece(range(i, i+4), range(j, j+4), piece_char) and
+                board.is_piece(i-1, j-1, EMPTY_CHAR)):
+            return i-1, j-1
+
+        # 左下到右上
+        if (board.is_piece(range(i, i-4, -1), range(j, j+4), piece_char) and
+                board.is_piece(i-4, j+4, EMPTY_CHAR)):
+            return i-4, j+4
+        if (board.is_piece(range(i, i-4, -1), range(j, j+4), piece_char) and
+                board.is_piece(i+1, j-1, EMPTY_CHAR)):
+            return i+1, j-1
+
+
+@try_this
+def try_5():
+    return __inspect_4_to_5_pos(MY_PIECE_CHAR)
+
+
+@try_this
+def try_block_enemy_5():
+    return __inspect_4_to_5_pos(ENEMY_PIECE_CHAR)
+
+
+def __inspect_3_to_d4_pos(piece_char):
+    """找到可填出四个相连、两边都为空的子的位置"""
+    for i, j in itertools.product(range(HEIGHT), range(WIDTH)):
+
+        # 横向
+        if (board.is_piece(i, range(j, j+3), piece_char) and
+                board.is_piece(i, [j-2, j-1, j+3], EMPTY_CHAR)):
+            return i, j-1
+        if (board.is_piece(i, range(j, j+3), piece_char) and
+                board.is_piece(i, [j-1, j+3, j+4], EMPTY_CHAR)):
+            return i, j+3
+
+        # 竖向
+        if (board.is_piece(range(i, i+3), j, piece_char) and
+                board.is_piece([i-2, i-1, i+3], j, EMPTY_CHAR)):
+            return i-1, j
+        if (board.is_piece(range(i, i+3), j, piece_char) and
+                board.is_piece([i-1, i+3, i+4], j, EMPTY_CHAR)):
+            return i+3, j
+
+        # 左上到右下
+        if (board.is_piece(range(i, i+3), range(j, j+3), piece_char) and
+                board.is_piece([i-2, i-1, i+3], [j-2, j-1, j+3], EMPTY_CHAR)):
+            return i-1, j-1
+        if (board.is_piece(range(i, i+3), range(j, j+3), piece_char) and
+                board.is_piece([i-1, i+3, i+4], [j-1, j+3, j+4], EMPTY_CHAR)):
+            return i+3, j+3
+
+        # 左下到右上
+        if (board.is_piece(range(i, i-3, -1), range(j, j+3), piece_char) and
+                board.is_piece([i+2, i+1, i-3], [j-2, j-1, j+3], EMPTY_CHAR)):
+            return i+1, j-1
+        if (board.is_piece(range(i, i-3, -1), range(j, j+3), piece_char) and
+                board.is_piece([i+1, i-3, i-4], [j-1, j+3, j+4], EMPTY_CHAR)):
+            return i-3, j+3
+
+
+@try_this
+def try_d4():
+    return __inspect_3_to_d4_pos(MY_PIECE_CHAR)
+
+
+@try_this
+def try_block_enemy_d4():
+    return __inspect_3_to_d4_pos(ENEMY_PIECE_CHAR)
+
+
+@try_this
+def try_x3():
+    pass
+
+
+@try_this
+def try_block_enemy_x3():
+    pass
+
+
+def __inspect_2_to_d3_pos(piece_char):
+    """查找可以填充出两边都是空位的3个子相连的位置"""
+    for i, j in itertools.product(range(HEIGHT), range(WIDTH)):
+
+        # 横向
+        if (board.is_piece(i, range(j, j+2), piece_char) and
+                board.is_piece(i, [j-2, j-1, j+2], EMPTY_CHAR)):
+            return i, j-1
+        if (board.is_piece(i, range(j, j+2), piece_char) and
+                board.is_piece(i, [j-1, j+2, j+3], EMPTY_CHAR)):
+            return i, j+2
+
+        # 竖向
+        if (board.is_piece(range(i, i+2), j, piece_char) and
+                board.is_piece([i-2, i-1, i+2], j, EMPTY_CHAR)):
+            return i-1, j
+        if (board.is_piece(range(i, i+2), j, piece_char) and
+                board.is_piece([i-1, i+2, i+3], j, EMPTY_CHAR)):
+            return i+2, j
+
+        # 左上到右下
+        if (board.is_piece(range(i, i+2), range(j, j+2), piece_char) and
+                board.is_piece([i-2, i-1, i+2], [j-2, j-1, j+2], EMPTY_CHAR)):
+            return i-1, j-1
+        if (board.is_piece(range(i, i+2), range(j, j+2), piece_char) and
+                board.is_piece([i-1, i+2, i+3], [j-1, j+2, j+3], EMPTY_CHAR)):
+            return i+2, j+2
+
+        # 左下到右上
+        if (board.is_piece(range(i, i-2, -1), range(j, j+2), piece_char) and
+                board.is_piece([i+2, i+1, i-2], [j-2, j-1, j+2], EMPTY_CHAR)):
+            return i+1, j-1
+        if (board.is_piece(range(i, i-2, -1), range(j, j+2), piece_char) and
+                board.is_piece([i+1, i-2, i-3], [j-1, j+2, j+3], EMPTY_CHAR)):
+            return i-2, j+2
+
+
+@try_this
+def try_d3():
+    return __inspect_2_to_d3_pos(MY_PIECE_CHAR)
+
+
+
+@try_this
+def try_block_enemy_d3():
+    return __inspect_2_to_d3_pos(ENEMY_PIECE_CHAR)
+
+
+@try_this
+def try_alone_2():
+    for i, j in itertools.product(range(HEIGHT), range(WIDTH)):
+
+        around_xs = [i-1, i, i+1, i-1, i+1, i-1, i, i+1]
+        around_ys = [j-1, j-1, j-1, j, j, j+1, j+1, j+1]
+
+        if (board.is_piece(i, j, MY_PIECE_CHAR) and
+                board.is_piece(around_xs, around_ys, EMPTY_CHAR)):
+            for x, y in zip(around_xs, around_ys):
+                around_xxs = [x-1, x, x+1, x-1, x+1, x-1, x, x+1]
+                around_yys = [y-1, y-1, y-1, y, y, y+1, y+1, y+1]
+                if sum([board.is_piece(xx, yy, EMPTY_CHAR)
+                        for xx, yy in zip(around_xxs, around_yys)]) == 7:
+                    return x, y
+
+
+@try_this
+def try_blank_1():
+    return taolu_1()
+
+def taolu_1():
+    """ 三三见九
+       ●    ●    ●
+
+       ●    ●    ●
+
+       ●    ●    ●
+    """
+
+    # 找到一个 5×5 的区域
+    for i, j in itertools.product(range(HEIGHT), range(WIDTH)):
+
+        around_xs = [i, i+2, i+4, i, i+2, i+4, i, i+2, i+4]
+        around_ys = [j, j, j, j+2, j+2, j+2, j+4, j+4, j+4]
+
+        if sum([board.is_piece(x, y, EMPTY_CHAR) or board.is_piece(x, y, MY_PIECE_CHAR)
+                for x, y in zip(around_xs, around_ys)]) == 9:
+            for x, y in zip(around_xs, around_ys):
+                if board.is_piece(x, y, EMPTY_CHAR):
+                    return x, y
+
+            around_xs = [i+1, i+3, i+3, i+1]
+            around_ys = [j+1, j+3, j+1, j+3]
+            for x, y in zip(around_xs, around_ys):
+                if board.is_piece(x, y, EMPTY_CHAR):
+                    return x, y
+
+            around_xs = [i+2, i+1, i+3, i+2]
+            around_ys = [j+1, j+2, j+2, j+3]
+            for x, y in zip(around_xs, around_ys):
+                if board.is_piece(x, y, EMPTY_CHAR):
+                    return x, y
+
+
+
+@try_this
+def try_random_pos():
+    while True:
+        x, y = random.randrange(HEIGHT), random.randrange(WIDTH)
+        if board.get(x, y) == EMPTY_CHAR:
+            return (x, y)
+
+
+if __name__ == '__main__':
+    play()
