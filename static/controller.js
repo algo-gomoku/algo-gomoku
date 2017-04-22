@@ -15,29 +15,61 @@ draw_chessboard(board_info.sx, board_info.sy, board_info.width, board_info.heigh
 
 // 获取对战信息
 var info_url = '/chessboards/' + id + '/';
-$.get(info_url).success(function(data) {
+var interval_id = start_update_interval_ms(1000);
 
-    // 画历史棋子
-    var chessboard = data.chessboard;
-    for (var i = 0; i < 19; i++) {
-        for (var j = 0; j < 19; j++) {
-            if (chessboard[i][j] != ' ') {
-                draw_piece(i, j, chessboard[i][j]);
+function start_update_interval_ms(interval_ms) {
+    return setInterval(update, interval_ms);
+}
+
+// TODO: 重构掉这个难看的HACK
+var player_info_painted = false;
+
+function update() {
+    $.get(info_url).success(function(data) {
+
+        console.log(data);
+        if (!data) {
+            return;
+        }
+
+        // 画历史棋子
+        var chessboard = data.chessboard;
+        if (chessboard) {
+            for (var i = 0; i < 19; i++) {
+                for (var j = 0; j < 19; j++) {
+                    if (chessboard[i][j] != ' ') {
+                        draw_piece(i, j, chessboard[i][j]);
+                    }
+                }
             }
         }
-    }
 
-    // 画当前棋子
-    var next = data.next;
-    draw_piece(next.position.i, next.position.j, next.piece_char);
+        // 画当前棋子
+        var next = data.next;
+        if (next) {
+            draw_piece(next.position.i, next.position.j, next.piece_char);
+        }
 
-    // 画玩家信息
-    var players = data.players;
-    update_info(
-        players[0].name, players[0].piece_char, players[0].used_time,
-        players[1].name, players[1].piece_char, players[1].used_time
-    );
-});
+        // 画玩家信息
+        var players = data.players;
+        if (players && !player_info_painted) {
+            update_info(
+                players[0].name, players[0].piece_char, players[0].used_time,
+                players[1].name, players[1].piece_char, players[1].used_time
+            );
+            player_info_painted = true;
+        }
+
+        if (data.result != 'ongoing') {
+            clearInterval(interval_id);
+            context = get_context();
+            context.font = "Bold 20px Arial";
+            context.textAlign = "left";
+            context.fillStyle = "#B00";
+            context.fillText(data.result, 130, 250);
+        }
+    });
+}
 
 
 function get_or_generate_id() {

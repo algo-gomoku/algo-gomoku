@@ -5,6 +5,8 @@ import json
 
 import flask
 
+import gomoku
+
 
 app = flask.Flask(__name__)
 
@@ -17,16 +19,13 @@ def index():
 @app.route('/chessboards/<id>/')
 def chessboard(id):
     """获取某局对战信息"""
-    data_path = 'data/%s.json' % (id,)
-    if not os.path.exists(data_path):
-        pass            # 不存在，新开一局
+    game_table = gomoku.Table(id)
+    if not game_table.is_ongoing():
+        game_table.reserve()
+        os.system('nohup ./gomoku -w %s ./players/{pysnow530,random1}&' % (id,))
+        return flask.jsonify(None)
 
-    info = json.load(open(data_path))
-    if info['result'] != 'ongoing':
-        pass            # 已结束，新开一局
-
-    # 正在对战，返回对战信息
-    return flask.jsonify(info)
+    return flask.jsonify(game_table.info)
 
 
 if __name__ == '__main__':
