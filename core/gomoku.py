@@ -12,7 +12,6 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[%(levelname)s] %(asctime)s -- %(message)s',
-                    # filename='gomoku.log',
                     filemode='a+')
 
 
@@ -29,36 +28,37 @@ def main():
     player2 = Player(board, WHITE_PIECE_CHAR, get_player_name(2))
 
     web_id = OptUtils.get_web_id()
+    game_table = Table(web_id)
 
     while True:
 
         time.sleep(1)
 
         player1.play(player2.piece_char)
-        if player1.win():
-            result = '%s win!' % (player1.name,)
-            update_data(web_id, player1, player2, board, None, result)
+        if player1.wined():
+            result = '%s win!' % (player1.short_name,)
+            game_table.update_data(player1, player2, board, None, result)
             sys.exit(0)
 
         if board.full():
-            update_data(web_id, player1, player2, board, None, 'Draw!')
+            game_table.update_data(player1, player2, board, None, 'Draw!')
             sys.exit(0)
 
-        update_data(web_id, player1, player2, board, player1.last_pos, None)
+        game_table.update_data(player1, player2, board, player1.last_pos, None)
 
         time.sleep(1)
 
         player2.play(player1.piece_char)
-        if player2.win():
-            result = '%s win!' % (player2.name,)
-            update_data(web_id, player1, player2, board, None, result)
+        if player2.wined():
+            result = '%s win!' % (player2.short_name,)
+            game_table.update_data(player1, player2, board, None, result)
             sys.exit(0)
 
         if board.full():
-            update_data(web_id, player1, player2, board, None, 'Draw!')
+            game_table.update_data(player1, player2, board, None, 'Draw!')
             sys.exit(0)
 
-        update_data(web_id, player1, player2, board, player2.last_pos, None)
+        game_table.update_data(player1, player2, board, player2.last_pos, None)
 
 
 class Player(object):
@@ -85,7 +85,6 @@ class Player(object):
         next_pos_str = subprocess.check_output([self.name, json.dumps(info)])
         next_pos = json.loads(next_pos_str)
         x, y = next_pos['x'], next_pos['y']
-        print '%s put (%d, %d) %s!' % (self.name, x, y, self.piece_char)
         self.board.set(x, y, self.piece_char)
         # TODO: 重构last_pos结构
         self.last_pos = {
@@ -96,7 +95,7 @@ class Player(object):
             }
         }
 
-    def win(self):
+    def wined(self):
         """根据游戏规则判断是否赢得胜利"""
         width = self.board.width
         height = self.board.height
@@ -122,6 +121,11 @@ class Player(object):
                 return True
 
         return False
+
+    @property
+    def short_name(self):
+        """根据传入的文件名获取basename"""
+        return os.path.basename(self.name)
 
 
 class Board(object):
@@ -162,15 +166,11 @@ class Board(object):
         """放子"""
         char = self.get(x, y)
         if char is None:
-            print >>sys.stderr, '位置(%d, %d)超出棋盘！' % (x, y)
             sys.exit(1)
         elif char != ' ':
-            print >>sys.stderr, '位置(%d, %d)已有子%s，不能放子！' % (x, y, char)
             sys.exit(2)
         else:
             self.data[x][y] = piece_char
-
-        self.update_display()
 
     def is_piece(self, x, y, piece_char):
         """判断某个位置或某些位置是否是我们的棋子
@@ -195,14 +195,6 @@ class Board(object):
                                                                    type(y)))
 
         return all([self.get(xx, yy) == piece_char for (xx, yy) in positions])
-
-    def update_display(self):
-        """更新棋盘显示"""
-        for i in range(self.height):
-            for j in range(self.width):
-                print '%s ' % (self.data[i][j],),
-            print
-        print '---' * self.width
 
 
 class Table(object):
@@ -245,60 +237,9 @@ class Table(object):
         else:
             return None
 
-
-class OptUtils(object):
-    """参数工具类"""
-
-    @staticmethod
-    def get_args():
-        """获取玩家算法文件"""
-        opts, args = getopt.getopt(sys.argv[1:], 'w:')
-
-        return args
-
-    @staticmethod
-    def get_web_id():
-        """是否使用web模式"""
-        opts, args = getopt.getopt(sys.argv[1:], 'w:')
-
-        for k, v in opts:
-            if k == '-w':
-                return v
-
-        return None
-
-
-def table_is_ongoing(web_id):
-    """如果web_id正在进行，直接退出"""
-    data_path = 'data/%s.json' % (web_id,)
-
-    return (os.path.exists(data_path) and
-            json.load(open(data_path))['result'] == 'ongoing')
-
-
-def get_player_name(id_):
-    """获取某个玩家的名字"""
-    try:
-        name = OptUtils.get_args()[id_-1]
-    except IndexError:
-        print >>sys.stderr, '\n'.join([
-            'Error: 玩家%d不存在',
-            '',
-            'Usage: gomoku PLAYER1 PLAYER2',
-            'NOTE: 其中PLAYER是可执行算法文件的文件路径'
-        ]) % (id_,)
-        sys.exit(-1)
-    else:
-        return name
-
-
-def update_data(web_id, player1, player2, board, next_=None, result=None):
-    """更新数据文件
-    TODO: 将该逻辑重构到Table类"""
-    if web_id is not None:
-        data_path = 'data/%s.json' % (web_id,)
-        if (not os.path.exists(data_path) or
-                json.load(open(data_path))['result'] != 'ongoing'):
+    def update_data(self, player1, player2, board, next_=None, result=None):
+        """更新数据文件"""
+        if not self.is_ongoing():
             info = {
                 'players': [
                     {
@@ -316,7 +257,7 @@ def update_data(web_id, player1, player2, board, next_=None, result=None):
                 'result': 'ongoing'
             }
         else:
-            info = json.load(open(data_path))
+            info = self.info
             info['result'] = 'ongoing'
             info['players'] = [
                 {
@@ -345,21 +286,48 @@ def update_data(web_id, player1, player2, board, next_=None, result=None):
         if result is not None:
             info['result'] = result
 
-        json.dump(info, open(data_path, 'w+'), indent=4)
+        json.dump(info, open(self.data_file_path, 'w+'), indent=4)
 
         if result is not None:
             sys.exit(0)
-    else:
-        if next_ is not None:
-            curr_player = (player1 if next_.piece_char == player1.piece_char
-                           else player2)
-            print '%s put (%d, %d) %s!' % (curr_player.name,
-                                           next_.position.x, next_.position.y,
-                                           next_.piece_char)
 
-        if result is not None:
-            print result
-            sys.exit()
+
+class OptUtils(object):
+    """参数工具类"""
+
+    @staticmethod
+    def get_args():
+        """获取玩家算法文件"""
+        opts, args = getopt.getopt(sys.argv[1:], 'w:')
+
+        return args
+
+    @staticmethod
+    def get_web_id():
+        """是否使用web模式"""
+        opts, args = getopt.getopt(sys.argv[1:], 'w:')
+
+        for k, v in opts:
+            if k == '-w':
+                return v
+
+        return None
+
+
+def get_player_name(id_):
+    """获取某个玩家的名字"""
+    try:
+        name = OptUtils.get_args()[id_-1]
+    except IndexError:
+        print >>sys.stderr, '\n'.join([
+            'Error: 玩家%d不存在',
+            '',
+            'Usage: gomoku PLAYER1 PLAYER2',
+            'NOTE: 其中PLAYER是可执行算法文件的文件路径'
+        ]) % (id_,)
+        sys.exit(-1)
+    else:
+        return name
 
 
 if __name__ == '__main__':

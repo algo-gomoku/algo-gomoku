@@ -9,7 +9,7 @@ import logging
 
 BASEDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASEDIR)
-import gomoku
+from core import gomoku
 
 
 logging.basicConfig(level=logging.DEBUG,

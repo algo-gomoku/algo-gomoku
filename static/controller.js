@@ -13,7 +13,7 @@ var id = get_or_generate_id();
 // 画棋盘
 draw_chessboard(board_info.sx, board_info.sy, board_info.width, board_info.height);
 
-// 获取对战信息
+// 定期获取对战信息
 var info_url = '/chessboards/' + id + '/';
 var interval_id = start_update_interval_ms(1000);
 
@@ -62,11 +62,7 @@ function update() {
 
         if (data.result != 'ongoing') {
             clearInterval(interval_id);
-            context = get_context();
-            context.font = "Bold 20px Arial";
-            context.textAlign = "left";
-            context.fillStyle = "#B00";
-            context.fillText(data.result, 130, 250);
+            draw_result(data.result);
         }
     });
 }
@@ -160,6 +156,15 @@ function update_info(name1, piece_char1, used_time1, name2, piece_char2, used_ti
     context.fillStyle = piece_char2 === '●' ? "#FFF" : "#000";
     context.fill();
     context.stroke();
+}
+
+
+function draw_result(result_str) {
+    context = get_context();
+    context.font = "Bold 20px Arial";
+    context.textAlign = "left";
+    context.fillStyle = "#B00";
+    context.fillText(result_str, 150, 250);
 }
 
 

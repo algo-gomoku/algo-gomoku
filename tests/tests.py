@@ -4,9 +4,9 @@ import os
 import sys
 import unittest
 
-BASEDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASEDIR)
-import gomoku
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+from core import gomoku
 
 
 class BoardTestCase(unittest.TestCase):

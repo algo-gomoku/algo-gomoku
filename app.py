@@ -5,7 +5,7 @@ import json
 
 import flask
 
-import gomoku
+from core import gomoku
 
 
 app = flask.Flask(__name__)
@@ -22,8 +22,9 @@ def chessboard(id):
     game_table = gomoku.Table(id)
     if not game_table.is_ongoing():
         game_table.reserve()
-        os.system(('nohup ./gomoku -w %s '
-                   './players/pysnow530 ./players/random1&') % (id,))
+        os.system(('nohup python core/gomoku.py -w %s '
+                   './players/pysnow530 ./players/random1 '
+                   '>>log/gomoku.out&') % (id,))
         return flask.jsonify(None)
 
     return flask.jsonify(game_table.info)
