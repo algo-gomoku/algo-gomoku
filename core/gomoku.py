@@ -27,8 +27,8 @@ def main():
     player1 = Player(board, BLACK_PIECE_CHAR, get_player_name(1))
     player2 = Player(board, WHITE_PIECE_CHAR, get_player_name(2))
 
-    web_id = OptUtils.get_web_id()
-    game_table = Table(web_id)
+    table_id = OptUtils.parse_table_id()
+    game_table = GameTable(table_id, board, player1, player2)
 
     while True:
 
@@ -36,29 +36,45 @@ def main():
 
         player1.play(player2.piece_char)
         if player1.wined():
-            result = '%s win!' % (player1.short_name,)
-            game_table.update_data(player1, player2, board, None, result)
+            game_table.result = '%s win!' % (player1.short_name,)
+            game_table.dump()
             sys.exit(0)
 
         if board.full():
-            game_table.update_data(player1, player2, board, None, 'Draw!')
+            game_table.result = 'Draw!'
+            game_table.dump()
             sys.exit(0)
 
-        game_table.update_data(player1, player2, board, player1.last_pos, None)
+        game_table.next = {
+            'piece_char': player1.piece_char,
+            'position': {
+                'x': player1.last_pos[0],
+                'y': player1.last_pos[1],
+            }
+        }
+        game_table.dump()
 
         time.sleep(1)
 
         player2.play(player1.piece_char)
         if player2.wined():
-            result = '%s win!' % (player2.short_name,)
-            game_table.update_data(player1, player2, board, None, result)
+            game_table.result = '%s win!' % (player2.short_name,)
+            game_table.dump()
             sys.exit(0)
 
         if board.full():
-            game_table.update_data(player1, player2, board, None, 'Draw!')
+            game_table.result = 'Draw!'
+            game_table.dump()
             sys.exit(0)
 
-        game_table.update_data(player1, player2, board, player2.last_pos, None)
+        game_table.next = {
+            'piece_char': player2.piece_char,
+            'position': {
+                'x': player2.last_pos[0],
+                'y': player2.last_pos[1],
+            }
+        }
+        game_table.dump()
 
 
 class Player(object):
@@ -86,14 +102,8 @@ class Player(object):
         next_pos = json.loads(next_pos_str)
         x, y = next_pos['x'], next_pos['y']
         self.board.set(x, y, self.piece_char)
-        # TODO: 重构last_pos结构
-        self.last_pos = {
-            'piece_char': self.piece_char,
-            'position': {
-                'x': x,
-                'y': y,
-            }
-        }
+
+        self.last_pos = (x, y)
 
     def wined(self):
         """根据游戏规则判断是否赢得胜利"""
@@ -197,26 +207,48 @@ class Board(object):
         return all([self.get(xx, yy) == piece_char for (xx, yy) in positions])
 
 
-class Table(object):
+class GameTable(object):
     """模拟游戏桌的概念，支持多个棋局同时对战"""
 
-    def __init__(self, id):
-        self.id = id
+    table_id = None
+
+    board = None
+    player1 = None
+    player2 = None
+
+    result = None
+    players = None
+    chessboard = None
+    next = None
+
+    def __init__(self, table_id, board=None, player1=None, player2=None):
+        self.table_id = table_id
+
+        if board is not None:
+            self.board = board
+        if player1 is not None:
+            self.player1 = player1
+        if player2 is not None:
+            self.player2 = player2
+
+        # 从文件装载内容到该对象
+        table_info = self.info
+        if table_info is not None:
+            self.result = table_info.get('result')
+            self.players = table_info.get('players')
+            self.chessboard = table_info.get('chessboard')
+            self.next = table_info.get('next')
 
     @property
     def data_file_path(self):
         """获取该桌对应的数据文件"""
-        data_path = 'data/%s.json' % (self.id,)
+        data_path = 'data/%s.json' % (self.table_id,)
 
         return data_path
 
     def is_ongoing(self):
-        """该桌正在进行中"""
-        if self.info is None:
-            return False
-
-        if (self.info['result'] == 'ongoing' or
-                os.stat(self.data_file_path).st_mtime > time.time() - 10):
+        """判断该桌是否正在进行中。一张桌，只有在一局完成后过10s才可用。"""
+        if self.result == 'ongoing' or self.mtime > time.time() - 10:
             return True
         else:
             return False
@@ -231,65 +263,56 @@ class Table(object):
 
     @property
     def info(self):
-        """获取table文件内保存的信息"""
+        """获取table文件内保存的信息。如果文件不存在，返回None"""
         if os.path.exists(self.data_file_path):
             return json.load(open(self.data_file_path))
         else:
             return None
 
-    def update_data(self, player1, player2, board, next_=None, result=None):
+    @property
+    def mtime(self):
+        """获取table文件最后修改时间"""
+        if os.path.exists(self.data_file_path):
+            return os.stat(self.data_file_path).st_mtime
+        else:
+            return None
+
+    def dump(self):
         """更新数据文件"""
-        if not self.is_ongoing():
-            info = {
-                'players': [
+        assert self.board is not None
+        assert self.player1 is not None
+        assert self.player2 is not None
+
+        if self.players is None:
+            self.players = [
                     {
-                        'name': os.path.basename(player1.name),
-                        'piece_char': player1.piece_char,
+                        'name': os.path.basename(self.player1.name),
+                        'piece_char': self.player1.piece_char,
                         'used_time': 0.0,
                     },
                     {
-                        'name': os.path.basename(player2.name),
-                        'piece_char': player2.piece_char,
+                        'name': os.path.basename(self.player2.name),
+                        'piece_char': self.player2.piece_char,
                         'used_time': 0.0,
                     }
-                ],
-                'chessboard': None,
-                'result': 'ongoing'
-            }
-        else:
-            info = self.info
-            info['result'] = 'ongoing'
-            info['players'] = [
-                {
-                    'name': os.path.basename(player1.name),
-                    'piece_char': player1.piece_char,
-                    'used_time': 0.0,
-                },
-                {
-                    'name': os.path.basename(player2.name),
-                    'piece_char': player2.piece_char,
-                    'used_time': 0.0,
-                }
             ]
 
-        chessboard = []
+        if self.result is None:
+            self.result = 'ongoing'
+
+        self.chessboard = []
         for i in range(19):
             line = []
             for j in range(19):
-                line.append(board.get(i, j))
-            chessboard.append(line)
-        info['chessboard'] = chessboard
+                line.append(self.board.get(i, j))
+            self.chessboard.append(line)
 
-        if next_ is not None:
-            info['next'] = next_
-
-        if result is not None:
-            info['result'] = result
-
-        json.dump(info, open(self.data_file_path, 'w+'), indent=4)
-
-        if result is not None:
-            sys.exit(0)
+        json.dump({
+            'players': self.players,
+            'chessboard': self.chessboard,
+            'result': self.result,
+            'next': self.next,
+        }, open(self.data_file_path, 'w+'), indent=4)
 
 
 class OptUtils(object):
@@ -303,7 +326,7 @@ class OptUtils(object):
         return args
 
     @staticmethod
-    def get_web_id():
+    def parse_table_id():
         """是否使用web模式"""
         opts, args = getopt.getopt(sys.argv[1:], 'w:')
 
@@ -316,18 +339,9 @@ class OptUtils(object):
 
 def get_player_name(id_):
     """获取某个玩家的名字"""
-    try:
-        name = OptUtils.get_args()[id_-1]
-    except IndexError:
-        print >>sys.stderr, '\n'.join([
-            'Error: 玩家%d不存在',
-            '',
-            'Usage: gomoku PLAYER1 PLAYER2',
-            'NOTE: 其中PLAYER是可执行算法文件的文件路径'
-        ]) % (id_,)
-        sys.exit(-1)
-    else:
-        return name
+    name = OptUtils.get_args()[id_-1]
+
+    return name
 
 
 if __name__ == '__main__':

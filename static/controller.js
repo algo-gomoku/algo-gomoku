@@ -27,7 +27,6 @@ var player_info_painted = false;
 function update() {
     $.get(info_url).success(function(data) {
 
-        console.log(data);
         if (!data) {
             return;
         }

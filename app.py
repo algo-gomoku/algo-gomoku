@@ -16,15 +16,15 @@ def index():
     return open('index.html').read()
 
 
-@app.route('/chessboards/<id>/')
-def chessboard(id):
+@app.route('/chessboards/<table_id>/')
+def chessboard(table_id):
     """获取某局对战信息"""
-    game_table = gomoku.Table(id)
+    game_table = gomoku.GameTable(table_id)
     if not game_table.is_ongoing():
         game_table.reserve()
         os.system(('nohup python core/gomoku.py -w %s '
                    './players/pysnow530 ./players/random1 '
-                   '>>log/gomoku.out&') % (id,))
+                   '>>log/gomoku.out&') % (table_id,))
         return flask.jsonify(None)
 
     return flask.jsonify(game_table.info)
