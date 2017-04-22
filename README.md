@@ -10,3 +10,5 @@ python app.py
 ```
 
 访问127.0.0.0:5000。
+
+![snapshot01.jpeg](snapshot/snapshot01.jpeg)
