@@ -48,6 +48,7 @@ def play():
     try_block_enemy_x3()
     try_d3()
     try_block_enemy_d3()
+    try_x2()
     try_alone_2()
     try_blank_1()
     try_random_pos()
@@ -207,7 +208,8 @@ def __inspect_2_to_d3_pos(piece_char):
         if (
                 is_piece_with((i, j), piece_char, range(i+2, i-1, -1), range(j-2, j+1)) and board.is_piece([i+3, i-1], [j-3, j+1], EMPTY_CHAR) or
                 is_piece_with((i, j), piece_char, range(i+1, i-2, -1), range(j-1, j+2)) and board.is_piece([i+2, i-2], [j-2, j+2], EMPTY_CHAR) or
-                is_piece_with((i, j), piece_char, range(i+0, i-3, -1), range(j-0, j+3)) and board.is_piece([i+1, i-3], [j-1, j+3], EMPTY_CHAR)):
+                is_piece_with((i, j), piece_char, range(i+0, i-3, -1), range(j-0, j+3)) and board.is_piece([i+1, i-3], [j-1, j+3], EMPTY_CHAR)
+        ):
             return i, j
 
 
@@ -219,6 +221,45 @@ def try_d3():
 @try_this
 def try_block_enemy_d3():
     return __inspect_2_to_d3_pos(ENEMY_PIECE_CHAR)
+
+
+@try_this
+def try_x2():
+    piece_char = MY_PIECE_CHAR
+
+    for i, j in itertools.product(range(HEIGHT), range(WIDTH)):
+
+        # 上右
+        if (
+                is_piece_with((i, j), piece_char, [i-1, i], j) and
+                is_piece_with((i, j), piece_char, i, [j, j+1]) and
+                board.is_piece(zip(range(i-4, i), range(j, j+4)), None, EMPTY_CHAR)
+        ):
+            return i, j
+
+        # 右下
+        if (
+                is_piece_with((i, j), piece_char, i, [j, j+1]) and
+                is_piece_with((i, j), piece_char, [i, i+1], j) and
+                board.is_piece(zip(range(i, i+4), range(j, j+4)), None, EMPTY_CHAR)
+        ):
+            return i, j
+
+        # 下左
+        if (
+                is_piece_with((i, j), piece_char, [i, i+1], j) and
+                is_piece_with((i, j), piece_char, i, [j-1, j]) and
+                board.is_piece(zip(range(i, i+4), range(j-4, j)), None, EMPTY_CHAR)
+        ):
+            return i, j
+
+        # 左上
+        if (
+                is_piece_with((i, j), piece_char, i, [j-1, j]) and
+                is_piece_with((i, j), piece_char, [i-1, i], j) and
+                board.is_piece(zip(range(i-4, i), range(j-4, j)), None, EMPTY_CHAR)
+        ):
+            return i, j
 
 
 @try_this
@@ -240,7 +281,10 @@ def try_alone_2():
 
 @try_this
 def try_blank_1():
-    pass
+    while True:
+        x, y = random.randrange(5, HEIGHT-5), random.randrange(5, WIDTH-5)
+        if board.get(x, y) == EMPTY_CHAR:
+            return (x, y)
 
 
 @try_this
