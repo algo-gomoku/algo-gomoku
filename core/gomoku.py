@@ -308,7 +308,7 @@ class GameTable(object):
         assert self.player2 is not None
 
         # 如果是命令行调用，直接显示对战结果
-        if self.table_id is None and self.result != 'ongoing':
+        if self.table_id is None and self.result not in ('ongoing', None):
             print self.result
             sys.exit(0)
 
