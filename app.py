@@ -23,7 +23,7 @@ def chessboard(table_id):
     if not game_table.is_ongoing():
         game_table.reserve()
         os.system(('nohup python core/gomoku.py -w %s '
-                   './players/pysnow530 ./players/random1 '
+                   './players/pysnow530 ./players/jin-taolu '
                    '>>log/gomoku.out&') % (table_id,))
         return flask.jsonify(None)
 
