@@ -194,12 +194,13 @@ class Board(object):
         else:
             self.data[x][y] = piece_char
 
-    def is_piece(self, x, y, piece_char):
-        """判断某个位置或某些位置是否是我们的棋子
-        is_piece([(0, 1), (0, 2), (0, 3), (0, 4)])
-        is_piece(0, 0)
-        is_piece([0, 1, 2], 0)
-        is_piece(0, [0, 1, 2])
+    @staticmethod
+    def flatten_xy(x, y):
+        """将x, y展开成一个位置数组，如
+        flatten_xy([(0, 1), (0, 2), (0, 3), (0, 4)])
+        flatten_xy(0, 0)
+        flatten_xy([0, 1, 2], 0)
+        flatten_xy(0, [0, 1, 2])
         """
         if y is None:
             positions = x
@@ -212,9 +213,17 @@ class Board(object):
                 positions = [(x, j) for j in y]
             elif isinstance(x, list) and isinstance(y, list):
                 positions = zip(x, y)
-            else:
-                raise Exception('is_piece(%r, %r) unimplement!' % (type(x),
-                                                                   type(y)))
+
+        return positions
+
+    def is_piece(self, x, y, piece_char):
+        """判断某个位置或某些位置是否是我们的棋子
+        is_piece([(0, 1), (0, 2), (0, 3), (0, 4)])
+        is_piece(0, 0)
+        is_piece([0, 1, 2], 0)
+        is_piece(0, [0, 1, 2])
+        """
+        positions = self.flatten_xy(x, y)
 
         return all([self.get(xx, yy) == piece_char for (xx, yy) in positions])
 

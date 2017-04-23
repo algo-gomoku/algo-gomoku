@@ -72,36 +72,36 @@ def __inspect_4_to_5_pos(piece_char):
     for i, j in itertools.product(range(HEIGHT), range(WIDTH)):
 
         # 横向
-        if (board.is_piece(i, range(j, j+4), piece_char) and
-                board.is_piece(i, j+4, EMPTY_CHAR)):
-            return i, j+4
-        if (board.is_piece(i, range(j, j+4), piece_char) and
-                board.is_piece(i, j-1, EMPTY_CHAR)):
-            return i, j-1
+        if (is_piece_with((i, j), piece_char, i, range(j-4, j+1)) or
+                is_piece_with((i, j), piece_char, i, range(j-3, j+2)) or
+                is_piece_with((i, j), piece_char, i, range(j-2, j+3)) or
+                is_piece_with((i, j), piece_char, i, range(j-1, j+4)) or
+                is_piece_with((i, j), piece_char, i, range(j-0, j+5))):
+            return i, j
 
         # 竖向
-        if (board.is_piece(range(i, i+4), j, piece_char) and
-                board.is_piece(i+4, j, EMPTY_CHAR)):
-            return i+4, j
-        if (board.is_piece(range(i, i+4), j, piece_char) and
-                board.is_piece(i-1, j, EMPTY_CHAR)):
-            return i-1, j
+        if (is_piece_with((i, j), piece_char, range(i-4, i+1), j) or
+                is_piece_with((i, j), piece_char, range(i-3, i+2), j) or
+                is_piece_with((i, j), piece_char, range(i-2, i+3), j) or
+                is_piece_with((i, j), piece_char, range(i-1, i+4), j) or
+                is_piece_with((i, j), piece_char, range(i-0, i+5), j)):
+            return i, j
 
         # 左上到右下
-        if (board.is_piece(range(i, i+4), range(j, j+4), piece_char) and
-                board.is_piece(i+4, j+4, EMPTY_CHAR)):
-            return i+4, j+4
-        if (board.is_piece(range(i, i+4), range(j, j+4), piece_char) and
-                board.is_piece(i-1, j-1, EMPTY_CHAR)):
-            return i-1, j-1
+        if (is_piece_with((i, j), piece_char, range(i-4, i+1), range(j-4, j+1)) or
+                is_piece_with((i, j), piece_char, range(i-3, i+2), range(j-3, j+2)) or
+                is_piece_with((i, j), piece_char, range(i-2, i+3), range(j-2, j+3)) or
+                is_piece_with((i, j), piece_char, range(i-1, i+4), range(j-1, j+4)) or
+                is_piece_with((i, j), piece_char, range(i-0, i+5), range(j-0, j+5))):
+            return i, j
 
         # 左下到右上
-        if (board.is_piece(range(i, i-4, -1), range(j, j+4), piece_char) and
-                board.is_piece(i-4, j+4, EMPTY_CHAR)):
-            return i-4, j+4
-        if (board.is_piece(range(i, i-4, -1), range(j, j+4), piece_char) and
-                board.is_piece(i+1, j-1, EMPTY_CHAR)):
-            return i+1, j-1
+        if (is_piece_with((i, j), piece_char, range(i+4, i-1, -1), range(j-4, j+1)) or
+                is_piece_with((i, j), piece_char, range(i+3, i-2, -1), range(j-3, j+2)) or
+                is_piece_with((i, j), piece_char, range(i+2, i-3, -1), range(j-2, j+3)) or
+                is_piece_with((i, j), piece_char, range(i+1, i-4, -1), range(j-1, j+4)) or
+                is_piece_with((i, j), piece_char, range(i+0, i-5, -1), range(j-0, j+5))):
+            return i, j
 
 
 @try_this
@@ -119,36 +119,40 @@ def __inspect_3_to_d4_pos(piece_char):
     for i, j in itertools.product(range(HEIGHT), range(WIDTH)):
 
         # 横向
-        if (board.is_piece(i, range(j, j+3), piece_char) and
-                board.is_piece(i, [j-2, j-1, j+3], EMPTY_CHAR)):
-            return i, j-1
-        if (board.is_piece(i, range(j, j+3), piece_char) and
-                board.is_piece(i, [j-1, j+3, j+4], EMPTY_CHAR)):
-            return i, j+3
+        if (
+                is_piece_with((i, j), piece_char, i, range(j-3, j+1)) and board.is_piece(i, [j-4, j+1], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, i, range(j-2, j+2)) and board.is_piece(i, [j-3, j+2], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, i, range(j-1, j+3)) and board.is_piece(i, [j-2, j+3], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, i, range(j-0, j+4)) and board.is_piece(i, [j-1, j+4], EMPTY_CHAR)
+        ):
+            return i, j
 
         # 竖向
-        if (board.is_piece(range(i, i+3), j, piece_char) and
-                board.is_piece([i-2, i-1, i+3], j, EMPTY_CHAR)):
-            return i-1, j
-        if (board.is_piece(range(i, i+3), j, piece_char) and
-                board.is_piece([i-1, i+3, i+4], j, EMPTY_CHAR)):
-            return i+3, j
+        if (
+                is_piece_with((i, j), piece_char, range(i-3, i+1), j) and board.is_piece([i-4, i+1], j, EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i-2, i+2), j) and board.is_piece([i-3, i+2], j, EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i-1, i+3), j) and board.is_piece([i-2, i+3], j, EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i-0, i+4), j) and board.is_piece([i-1, i+4], j, EMPTY_CHAR)
+        ):
+            return i, j
 
         # 左上到右下
-        if (board.is_piece(range(i, i+3), range(j, j+3), piece_char) and
-                board.is_piece([i-2, i-1, i+3], [j-2, j-1, j+3], EMPTY_CHAR)):
-            return i-1, j-1
-        if (board.is_piece(range(i, i+3), range(j, j+3), piece_char) and
-                board.is_piece([i-1, i+3, i+4], [j-1, j+3, j+4], EMPTY_CHAR)):
-            return i+3, j+3
+        if (
+                is_piece_with((i, j), piece_char, range(i-3, i+1), range(j-3, j+1)) and board.is_piece([i-4, i+1], [i-4, i+1], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i-2, i+2), range(j-2, j+2)) and board.is_piece([i-3, i+2], [i-3, i+2], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i-1, i+3), range(j-1, j+3)) and board.is_piece([i-2, i+3], [i-2, i+3], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i-0, i+4), range(j-0, j+4)) and board.is_piece([i-1, i+4], [i-1, i+4], EMPTY_CHAR)
+        ):
+            return i, j
 
         # 左下到右上
-        if (board.is_piece(range(i, i-3, -1), range(j, j+3), piece_char) and
-                board.is_piece([i+2, i+1, i-3], [j-2, j-1, j+3], EMPTY_CHAR)):
-            return i+1, j-1
-        if (board.is_piece(range(i, i-3, -1), range(j, j+3), piece_char) and
-                board.is_piece([i+1, i-3, i-4], [j-1, j+3, j+4], EMPTY_CHAR)):
-            return i-3, j+3
+        if (
+                is_piece_with((i, j), piece_char, range(i+3, i-1, -1), range(j-3, j+1)) and board.is_piece([i+4, i-1], [j-4, j+1], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i+2, i-2, -1), range(j-2, j+2)) and board.is_piece([i+3, i-2], [j-3, j+2], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i+1, i-3, -1), range(j-1, j+3)) and board.is_piece([i+2, i-3], [j-2, j+3], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i+0, i-4, -1), range(j-0, j+4)) and board.is_piece([i+1, i-4], [j-1, j+4], EMPTY_CHAR)
+        ):
+            return i, j
 
 
 @try_this
@@ -176,42 +180,40 @@ def __inspect_2_to_d3_pos(piece_char):
     for i, j in itertools.product(range(HEIGHT), range(WIDTH)):
 
         # 横向
-        if (board.is_piece(i, range(j, j+2), piece_char) and
-                board.is_piece(i, [j-2, j-1, j+2], EMPTY_CHAR)):
-            return i, j-1
-        if (board.is_piece(i, range(j, j+2), piece_char) and
-                board.is_piece(i, [j-1, j+2, j+3], EMPTY_CHAR)):
-            return i, j+2
+        if (
+                is_piece_with((i, j), piece_char, i, range(j-2, j+1)) and board.is_piece(i, [j-3, j+1], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, i, range(j-1, j+2)) and board.is_piece(i, [j-2, j+2], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, i, range(j-0, j+3)) and board.is_piece(i, [j-1, j+3], EMPTY_CHAR)
+        ):
+            return i, j
 
         # 竖向
-        if (board.is_piece(range(i, i+2), j, piece_char) and
-                board.is_piece([i-2, i-1, i+2], j, EMPTY_CHAR)):
-            return i-1, j
-        if (board.is_piece(range(i, i+2), j, piece_char) and
-                board.is_piece([i-1, i+2, i+3], j, EMPTY_CHAR)):
-            return i+2, j
+        if (
+                is_piece_with((i, j), piece_char, range(i-2, i+1), j) and board.is_piece([i-3, i+1], j, EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i-1, i+2), j) and board.is_piece([i-2, i+2], j, EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i-0, i+3), j) and board.is_piece([i-1, i+3], j, EMPTY_CHAR)
+        ):
+            return i, j
 
         # 左上到右下
-        if (board.is_piece(range(i, i+2), range(j, j+2), piece_char) and
-                board.is_piece([i-2, i-1, i+2], [j-2, j-1, j+2], EMPTY_CHAR)):
-            return i-1, j-1
-        if (board.is_piece(range(i, i+2), range(j, j+2), piece_char) and
-                board.is_piece([i-1, i+2, i+3], [j-1, j+2, j+3], EMPTY_CHAR)):
-            return i+2, j+2
+        if (
+                is_piece_with((i, j), piece_char, range(i-2, i+1), range(j-2, j+1)) and board.is_piece([i-3, i+1], [j-3, j+1], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i-1, i+2), range(j-1, j+2)) and board.is_piece([i-2, i+2], [j-3, j+1], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i-0, i+3), range(j-0, j+3)) and board.is_piece([i-1, i+3], [j-3, j+1], EMPTY_CHAR)
+        ):
+            return i, j
 
         # 左下到右上
-        if (board.is_piece(range(i, i-2, -1), range(j, j+2), piece_char) and
-                board.is_piece([i+2, i+1, i-2], [j-2, j-1, j+2], EMPTY_CHAR)):
-            return i+1, j-1
-        if (board.is_piece(range(i, i-2, -1), range(j, j+2), piece_char) and
-                board.is_piece([i+1, i-2, i-3], [j-1, j+2, j+3], EMPTY_CHAR)):
-            return i-2, j+2
+        if (
+                is_piece_with((i, j), piece_char, range(i+2, i-1, -1), range(j-2, j+1)) and board.is_piece([i+3, i-1], [j-3, j+1], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i+1, i-2, -1), range(j-1, j+2)) and board.is_piece([i+2, i-2], [j-2, j+2], EMPTY_CHAR) or
+                is_piece_with((i, j), piece_char, range(i+0, i-3, -1), range(j-0, j+3)) and board.is_piece([i+1, i-3], [j-1, j+3], EMPTY_CHAR)):
+            return i, j
 
 
 @try_this
 def try_d3():
     return __inspect_2_to_d3_pos(MY_PIECE_CHAR)
-
 
 
 @try_this
@@ -247,6 +249,22 @@ def try_random_pos():
         x, y = random.randrange(HEIGHT), random.randrange(WIDTH)
         if board.get(x, y) == EMPTY_CHAR:
             return (x, y)
+
+
+def is_piece_with(xy_tuple, fill_piece_char, x, y, piece_char=None):
+    """判断将xy_tuple处填入fill_piece_char后，x, y位置数组
+    是否全为piece_char"""
+    if piece_char is None:
+        piece_char = fill_piece_char
+
+    positions = board.flatten_xy(x, y)
+    xy_tuple_idx = positions.index(xy_tuple)
+
+    positions.pop(xy_tuple_idx)
+
+    return (board.is_piece(positions, None, piece_char) and
+            board.is_piece([xy_tuple], None, EMPTY_CHAR) and
+            fill_piece_char == piece_char)
 
 
 if __name__ == '__main__':
