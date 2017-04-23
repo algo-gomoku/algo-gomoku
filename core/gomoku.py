@@ -32,7 +32,9 @@ def main():
 
     while True:
 
-        time.sleep(1)
+        # 如果是web端使用，休眠一秒让页面更方便查看
+        if table_id is not None:
+            time.sleep(1)
 
         try:
             player1.play(player2.piece_char)
@@ -60,7 +62,8 @@ def main():
         }
         game_table.dump()
 
-        time.sleep(1)
+        if table_id is not None:
+            time.sleep(1)
 
         try:
             player2.play(player1.piece_char)
@@ -303,6 +306,11 @@ class GameTable(object):
         assert self.board is not None
         assert self.player1 is not None
         assert self.player2 is not None
+
+        # 如果是命令行调用，直接显示对战结果
+        if self.table_id is None and self.result != 'ongoing':
+            print self.result
+            sys.exit(0)
 
         if self.players is None:
             self.players = [
