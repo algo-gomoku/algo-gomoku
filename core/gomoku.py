@@ -34,7 +34,13 @@ def main():
 
         time.sleep(1)
 
-        player1.play(player2.piece_char)
+        try:
+            player1.play(player2.piece_char)
+        except Exception as e:
+            game_table.result = 'player %s algo error!' % (player1.short_name,)
+            game_table.dump()
+            sys.exit(0)
+
         if player1.wined():
             game_table.result = '%s win!' % (player1.short_name,)
             game_table.dump()
@@ -56,7 +62,13 @@ def main():
 
         time.sleep(1)
 
-        player2.play(player1.piece_char)
+        try:
+            player2.play(player1.piece_char)
+        except Exception as e:
+            game_table.result = 'player %s algo error!' % (player2.short_name,)
+            game_table.dump()
+            sys.exit(0)
+
         if player2.wined():
             game_table.result = '%s win!' % (player2.short_name,)
             game_table.dump()
